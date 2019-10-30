@@ -1,8 +1,10 @@
 ---
-title: "Machine Learning 2019: Feature Selection"
+title: 'Machine Learning 2019: Feature Selection'
 author: "Sonali Narang"
-date: October 24, 2019
-output: pdf_document
+date: "October 24, 2019"
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -164,6 +166,52 @@ importance(rfmodel)
 
 1. Compare the most important features from at least 2 different classes of feature selection methods covered in this tutorial with any reasonable machine learning dataset from mlbench. Do these feature selection methods provide similar results? 
 
+```{r load Zoo dataset}
+data(PimaIndiansDiabetes)
+head(PimaIndiansDiabetes)
+dim(PimaIndiansDiabetes)
+summary(PimaIndiansDiabetes$diabetes)
+```
+
+Recursive Feature Elimination
+```{r}
+control = rfeControl(functions = caretFuncs, number = 2)
+
+results = rfe(PimaIndiansDiabetes[,1:8], PimaIndiansDiabetes[,9], sizes = c(2,5,7), rfeControl = control, method = "svmRadial")
+
+results
+results$variables
+```
+
+*Random Forest*
+```{r}
+train_size <- floor(0.75 * nrow(PimaIndiansDiabetes))
+set.seed(1)
+train_pos <- sample(seq_len(nrow(PimaIndiansDiabetes)), size = train_size)
+
+train_classification <- PimaIndiansDiabetes[train_pos, ]
+test_classification <- PimaIndiansDiabetes[-train_pos, ]
+
+rfmodel = randomForest(diabetes ~ pregnant + glucose + pressure + triceps + insulin + mass + pedigree + age, data=train_classification,  importance = TRUE, oob.times = 15, confusion = TRUE)
+
+importance(rfmodel)
+```
+
 2. Attempt a feature selection method not covered in this tutorial (backward elimination, forward propogation, etc.)
 
+Simulated Annealing
+```{r}
+ctrl <- safsControl(functions = rfSA,
+                        method = "repeatedcv",
+                        repeats = 3,
+                        improve = 5) # n iterations without improvement before a reset
+
+
+set.seed(1)
+sa_obj <- safs(x=train_classification[, 1:8], 
+               y=train_classification[, 9],
+               safsControl = ctrl)
+
+sa_obj
+```
 
